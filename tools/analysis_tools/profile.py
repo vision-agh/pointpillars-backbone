@@ -71,10 +71,11 @@ def main():
                 model(return_loss=False, rescale=True, **data)
         else:
             with profile(activities=[
-                    ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
+                    ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, with_flops=True) as prof:
                 with torch.no_grad():
                     model(return_loss=False, rescale=True, **data)
-            print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+            # print(prof.key_averages())
+            print(prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=10))
             break
 
 

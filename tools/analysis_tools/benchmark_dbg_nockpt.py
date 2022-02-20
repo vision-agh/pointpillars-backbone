@@ -82,7 +82,7 @@ def main():
                 print(f'Done image [{i + 1:<3}/ {args.samples}], '
                       f'fps: {fps:.1f} img / s')
 
-        if (i + 1) == args.samples:
+        if (i + 1) >= int(args.samples):
             pure_inf_time += elapsed
             fps = (i + 1 - num_warmup) / pure_inf_time
             print(f'Overall fps: {fps:.1f} img / s')

@@ -1,26 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import warnings
-from mmcv.cnn.bricks import DepthwiseSeparableConvModule as DWSConv
+from mmcv.cnn import build_conv_layer, build_norm_layer
 from mmcv.runner import BaseModule
 from torch import nn as nn
+import time
 
 from mmdet.models import BACKBONES
-"""
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size,
-                 stride=1,
-                 padding=0,
-                 dilation=1,
-                 norm_cfg=None,
-                 act_cfg=dict(type='ReLU'),
-                 dw_norm_cfg='default',
-                 dw_act_cfg='default',
-                 pw_norm_cfg='default',
-                 pw_act_cfg='default',
-                 **kwargs):
-"""
 
 
 @BACKBONES.register_module()
@@ -41,7 +26,7 @@ class SECONDMobilenetV1(BaseModule):
                  layer_nums=[3, 5, 5],
                  layer_strides=[2, 2, 2],
                  norm_cfg=dict(type='BN', eps=1e-3, momentum=0.01),
-                 act_cfg=dict(type='ReLU', inplace=True),
+                 conv_cfg=dict(type='Conv2d', bias=False),
                  init_cfg=None,
                  pretrained=None):
         super(SECONDMobilenetV1, self).__init__(init_cfg=init_cfg)
@@ -54,28 +39,47 @@ class SECONDMobilenetV1(BaseModule):
         blocks = []
         for i, layer_num in enumerate(layer_nums):
             block = [
-                DWSConv(
+                # depthwise
+                build_conv_layer(
+                    conv_cfg,
+                    in_filters[i],
+                    in_filters[i],
+                    3,
+                    stride=layer_strides[i],
+                    padding=1,
+                    groups=in_filters[i]),
+                build_norm_layer(norm_cfg, in_filters[i])[1],
+                nn.ReLU(inplace=True),
+                # pointwise
+                build_conv_layer(
+                    conv_cfg,
                     in_filters[i],
                     out_channels[i],
-                    kernel_size = 3,
-                    stride      = layer_strides[i],
-                    padding     = 1,
-                    norm_cfg    = norm_cfg,
-                    act_cfg     = act_cfg,
-                ),
+                    1),
+                build_norm_layer(norm_cfg, out_channels[i])[1],
+                nn.ReLU(inplace=True),
             ]
             for j in range(layer_num):
+                # depthwise
                 block.append(
-                    DWSConv(
+                    build_conv_layer(
+                        conv_cfg,
                         out_channels[i],
                         out_channels[i],
-                        kernel_size = 3,
-                        stride      = 1,
-                        padding     = 1,
-                        norm_cfg    = norm_cfg,
-                        act_cfg     = act_cfg,
-                    )
-                )
+                        3,
+                        padding=1,
+                        groups=out_channels[i]))
+                block.append(build_norm_layer(norm_cfg, out_channels[i])[1])
+                block.append(nn.ReLU(inplace=True))
+                # pointwise
+                block.append(
+                    build_conv_layer(
+                        conv_cfg,
+                        out_channels[i],
+                        out_channels[i],
+                        1))
+                block.append(build_norm_layer(norm_cfg, out_channels[i])[1])
+                block.append(nn.ReLU(inplace=True))
 
             block = nn.Sequential(*block)
             blocks.append(block)

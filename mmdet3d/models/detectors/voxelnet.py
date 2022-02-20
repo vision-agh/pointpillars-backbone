@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
+import torch as t
 from mmcv.runner import force_fp32
 from torch.nn import functional as F
 
@@ -8,6 +9,8 @@ from mmdet3d.ops import Voxelization
 from mmdet.models import DETECTORS
 from .. import builder
 from .single_stage import SingleStage3DDetector
+
+import time
 
 
 @DETECTORS.register_module()
@@ -39,13 +42,34 @@ class VoxelNet(SingleStage3DDetector):
 
     def extract_feat(self, points, img_metas=None):
         """Extract features from points."""
+        t.cuda.synchronize()
+        time_s = time.time()
         voxels, num_points, coors = self.voxelize(points)
         voxel_features = self.voxel_encoder(voxels, num_points, coors)
         batch_size = coors[-1, 0].item() + 1
         x = self.middle_encoder(voxel_features, coors, batch_size)
+        time_e = time.time()
+        time_p = time_e - time_s
+        t.cuda.synchronize()
+
+        t.cuda.synchronize()
+        time_s = time.time()
         x = self.backbone(x)
+        time_e = time.time()
+        time_b = time_e - time_s 
+        t.cuda.synchronize()
+
+        t.cuda.synchronize()
+        time_s = time.time()
         if self.with_neck:
             x = self.neck(x)
+        time_e = time.time()
+        time_n = time_e - time_s
+        t.cuda.synchronize()
+        print(f'time prep: {time_p:.5f}')
+        print(f'time back: {time_b:.5f}')
+        print(f'time neck: {time_n:.5f}')
+        t.cuda.synchronize()
         return x
 
     @torch.no_grad()
@@ -98,13 +122,26 @@ class VoxelNet(SingleStage3DDetector):
     def simple_test(self, points, img_metas, imgs=None, rescale=False):
         """Test function without augmentaiton."""
         x = self.extract_feat(points, img_metas)
+        t.cuda.synchronize()
+        time_s = time.time()
         outs = self.bbox_head(x)
+        time_e = time.time()
+        time_h = time_e - time_s
+        t.cuda.synchronize()
+
+        t.cuda.synchronize()
+        time_s = time.time()
         bbox_list = self.bbox_head.get_bboxes(
             *outs, img_metas, rescale=rescale)
         bbox_results = [
             bbox3d2result(bboxes, scores, labels)
             for bboxes, scores, labels in bbox_list
         ]
+        time_e = time.time()
+        time_pos = time_e - time_s
+        t.cuda.synchronize()
+        print(f'time head: {time_h:.5f}')
+        print(f'time post: {time_pos:.5f}\n')
         return bbox_results
 
     def aug_test(self, points, img_metas, imgs=None, rescale=False):
