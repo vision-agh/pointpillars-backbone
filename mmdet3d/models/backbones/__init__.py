@@ -8,10 +8,11 @@ from .second import SECOND
 from .second_mobilenet import SECONDMobilenetV1, SECONDMobilenetV2
 from .second_squeezenet import SECONDSqueezeNext
 from .second_resnet import SECONDResNet, SECONDResNeXt
+from .second_xception import SECONDXception
 
 __all__ = [
     'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet', 'NoStemRegNet',
     'SECOND', 'PointNet2SASSG', 'PointNet2SAMSG', 'MultiBackbone',
     'SECONDMobilenetV1', 'SECONDMobilenetV2', 'SECONDSqueezeNext',
-    'SECONDResNet', 'SECONDResNeXt',
+    'SECONDResNet', 'SECONDResNeXt', 'SECONDXception',
 ]
