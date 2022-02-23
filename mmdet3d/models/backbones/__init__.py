@@ -7,9 +7,11 @@ from .pointnet2_sa_ssg import PointNet2SASSG
 from .second import SECOND
 from .second_mobilenet import SECONDMobilenetV1, SECONDMobilenetV2
 from .second_squeezenet import SECONDSqueezeNext
+from .second_resnet import SECONDResNet, SECONDResNeXt
 
 __all__ = [
     'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet', 'NoStemRegNet',
     'SECOND', 'PointNet2SASSG', 'PointNet2SAMSG', 'MultiBackbone',
     'SECONDMobilenetV1', 'SECONDMobilenetV2', 'SECONDSqueezeNext',
+    'SECONDResNet', 'SECONDResNeXt',
 ]
