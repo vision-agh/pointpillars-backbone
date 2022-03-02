@@ -44,3 +44,5 @@ RUN pip install --no-cache-dir -e .
 RUN pip install numpy==1.19.5
 RUN pip install pycocotools==2.0.1
 RUN pip install xtcocotools==1.9
+
+RUN pip install timm
