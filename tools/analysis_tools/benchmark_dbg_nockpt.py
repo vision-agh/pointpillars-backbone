@@ -8,6 +8,7 @@ from mmcv.runner import load_checkpoint, wrap_fp16_model
 
 from mmdet3d.datasets import build_dataloader, build_dataset
 from mmdet3d.models import build_detector
+from mmdet3d.utils import print_time
 from tools.misc.fuse_conv_bn import fuse_module
 
 
@@ -87,6 +88,8 @@ def main():
             fps = (i + 1 - num_warmup) / pure_inf_time
             print(f'Overall fps: {fps:.1f} img / s')
             break
+    
+    print_time()
 
 
 if __name__ == '__main__':
