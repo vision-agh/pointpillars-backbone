@@ -10,6 +10,7 @@ from .second_squeezenet import SECONDSqueezeNext
 from .second_resnet import SECONDResNet, SECONDResNeXt
 from .second_xception import SECONDXception
 from .second_darknet import SECONDDarknet, SECONDCSPDarknet
+from .second_shufflenet import SECONDShufflenetV1, SECONDShufflenetV2
 
 __all__ = [
     'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet', 'NoStemRegNet',
@@ -17,4 +18,5 @@ __all__ = [
     'SECONDMobilenetV1', 'SECONDMobilenetV2', 'SECONDSqueezeNext',
     'SECONDResNet', 'SECONDResNeXt', 'SECONDXception',
     'SECONDDarknet', 'SECONDCSPDarknet',
+    'SECONDShufflenetV1', 'SECONDShufflenetV2',
 ]

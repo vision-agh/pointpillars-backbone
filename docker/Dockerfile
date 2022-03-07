@@ -46,3 +46,4 @@ RUN pip install pycocotools==2.0.1
 RUN pip install xtcocotools==1.9
 
 RUN pip install timm
+RUN pip install mmcls==0.17.0
