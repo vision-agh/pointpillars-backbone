@@ -4,45 +4,71 @@ from mmcv.cnn.bricks import DepthwiseSeparableConvModule as DWSConv
 from mmcv.runner import BaseModule
 from torch import nn as nn
 import torch.nn.functional as F
+import torch
 
 from mmdet.models import BACKBONES
 
 class BasicBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride):
         super(BasicBlock, self).__init__()
+
+        BIAS = True
+        RELU_INPLACE = True
+        
         reduction = 0.5
         if 2 == stride:
             reduction = 1
         elif in_channels > out_channels:
             reduction = 0.25
-            
-        self.conv1 = nn.Conv2d(in_channels, int(in_channels * reduction), 1, stride, bias=True)
-        self.bn1   = nn.BatchNorm2d(int(in_channels * reduction))
-        self.conv2 = nn.Conv2d(int(in_channels * reduction), int(in_channels * reduction * 0.5), 1, 1, bias=True)
-        self.bn2   = nn.BatchNorm2d(int(in_channels * reduction * 0.5))
-        self.conv3 = nn.Conv2d(int(in_channels * reduction * 0.5), int(in_channels * reduction), (1, 3), 1, (0, 1), bias=True)
-        self.bn3   = nn.BatchNorm2d(int(in_channels * reduction))
-        self.conv4 = nn.Conv2d(int(in_channels * reduction), int(in_channels * reduction), (3, 1), 1, (1, 0), bias=True)
-        self.bn4   = nn.BatchNorm2d(int(in_channels * reduction))
-        self.conv5 = nn.Conv2d(int(in_channels * reduction), out_channels, 1, 1, bias=True)
-        self.bn5   = nn.BatchNorm2d(out_channels)
         
-        self.shortcut = nn.Sequential()
+        self.bconv1 = nn.Sequential(
+            nn.Conv2d(in_channels, int(in_channels * reduction), 1, stride, bias=BIAS),
+            nn.BatchNorm2d(int(in_channels * reduction)),
+            nn.ReLU(inplace=RELU_INPLACE),
+        )
+        self.bconv2 = nn.Sequential(
+            nn.Conv2d(int(in_channels * reduction), int(in_channels * reduction * 0.5), 1, 1, bias=BIAS),
+            nn.BatchNorm2d(int(in_channels * reduction * 0.5)),
+            nn.ReLU(inplace=RELU_INPLACE),
+        )
+        self.bconv3 = nn.Sequential(
+            nn.Conv2d(int(in_channels * reduction * 0.5), int(in_channels * reduction), (1, 3), 1, (0, 1), bias=BIAS),
+            nn.BatchNorm2d(int(in_channels * reduction)),
+            nn.ReLU(inplace=RELU_INPLACE),
+        )
+        self.bconv4 = nn.Sequential(
+            nn.Conv2d(int(in_channels * reduction), int(in_channels * reduction), (3, 1), 1, (1, 0), bias=BIAS),
+            nn.BatchNorm2d(int(in_channels * reduction)),
+            nn.ReLU(inplace=RELU_INPLACE),
+        )
+        self.bconv5 = nn.Sequential(
+            nn.Conv2d(int(in_channels * reduction), out_channels, 1, 1, bias=BIAS),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=RELU_INPLACE),
+        )
+        self.shortcut = nn.Sequential(
+            nn.ReLU(inplace=False),
+        )
         if 2 == stride or in_channels != out_channels:
             self.shortcut = nn.Sequential(
-                            nn.Conv2d(in_channels, out_channels, 1, stride, bias=True),
-                            nn.BatchNorm2d(out_channels)
+                            nn.Conv2d(in_channels, out_channels, 1, stride, bias=BIAS),
+                            nn.BatchNorm2d(out_channels),
+                            nn.ReLU(inplace=RELU_INPLACE),
             )
+
+        self.out_block = nn.ReLU(inplace=False)
             
-    def forward(self, input):
-        output = F.relu(self.bn1(self.conv1(input)))
-        output = F.relu(self.bn2(self.conv2(output)))
-        output = F.relu(self.bn3(self.conv3(output)))
-        output = F.relu(self.bn4(self.conv4(output)))
-        output = F.relu(self.bn5(self.conv5(output)))
-        output += F.relu(self.shortcut(input))
-        output = F.relu(output)
-        return output
+    def forward(self, x):
+        input = x
+        x = self.bconv1(x)
+        x = self.bconv2(x)
+        x = self.bconv3(x)
+        x = self.bconv4(x)
+        x = self.bconv5(x)
+        input = self.shortcut(input)
+        x = x + input
+        x = self.out_block(x)
+        return x
     
 
 @BACKBONES.register_module()
