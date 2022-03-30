@@ -9,6 +9,7 @@ import torch.nn.functional as F
 from mmdet.models import BACKBONES
 from mmcv.runner import BaseModule, Sequential
 from torch import nn as nn
+import math
 
 
 class ResLayer(Sequential):
@@ -201,6 +202,7 @@ class Bottleneck(BaseModule):
                  planes,
                  stride=1,
                  dilation=1,
+                 groups=1,
                  downsample=None,
                  style='pytorch',
                  with_cp=False,
@@ -499,6 +501,7 @@ class BottleneckResNeXt(Bottleneck):
 @BACKBONES.register_module()
 class SECONDResNet(BaseModule):
     layer_cls = Bottleneck
+    groups = 1
     """Backbone network for SECOND/PointPillars/PartA2/MVXNet.
 
     Args:
@@ -544,6 +547,7 @@ class SECONDResNet(BaseModule):
                         out_channels[i], 
                         out_channels[i] // self.layer_cls.expansion, 
                         stride = 1,
+                        groups = self.groups,
                         norm_cfg = norm_cfg,
                         conv_cfg = conv_cfg,
                     )
@@ -585,3 +589,4 @@ class SECONDResNetBasic(SECONDResNet):
 @BACKBONES.register_module()
 class SECONDResNeXt(SECONDResNet):
     layer_cls = BottleneckResNeXt
+    groups = 32
